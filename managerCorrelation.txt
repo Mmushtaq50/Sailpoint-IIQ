@@ -1,0 +1,14 @@
+  import java.util.Map;
+  import java.util.HashMap;
+  import sailpoint.object.Attributes;
+  import sailpoint.object.Identity;
+
+
+  Map managerMap = new HashMap();
+  System.out.println("*****Manager Corrlation Rule******");
+  String managerName = link.getAttribute("managerId");
+  if(managerMap != null){
+    managerMap.put("identityAttributeName", "employeeId");
+    managerMap.put("identityAttributeValue",managerName);
+    return managerMap;
+  }
