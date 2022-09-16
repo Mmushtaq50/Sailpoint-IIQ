@@ -1,4 +1,4 @@
-//Incase, if you want to check weather the identity is having the Application link or not....! 
+//Incase, if you want to check weather the identity is having the specific Application link or not....! 
 
   import java.util.ArrayList;
   import java.util.List;
