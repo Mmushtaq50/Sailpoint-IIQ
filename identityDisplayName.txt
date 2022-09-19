@@ -1,9 +1,0 @@
-  
-
-String displayName = identity.getDisplayName();
-         
-  
-           if(displayName == null || displayName.isEmpty()){
-            	displayName = identity.getFirstname()+"."+identity.getLastname();
-            }
-            return displayName;
