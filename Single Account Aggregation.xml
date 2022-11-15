@@ -1,0 +1,140 @@
+ import sailpoint.object.Application;
+  import sailpoint.object.Attributes;
+  import sailpoint.object.ResourceObject;
+  import sailpoint.object.TaskResult;
+  import sailpoint.object.Rule;
+  import sailpoint.api.Aggregator;
+  import sailpoint.connector.Connector;
+  import sailpoint.connector.ConnectorException;
+
+  import org.apache.log4j.Logger;
+  import java.util.HashMap;
+  import sailpoint.api.SailPointContext;
+  import sailpoint.tools.GeneralException;
+  
+  
+ /* String strAppName = "AD - MGMMirage";
+  Application app = context.getObjectByName(Application.class, strAppName);
+
+  Connector appConnector = sailpoint.connector.ConnectorFactory.getConnector(app, null);
+  ResourceObject rObj = (ResourceObject) appConnector.getObject("account", "100449", null);
+
+  System.out.println("rObj: "+rObj.toXml());
+return "Success";*/
+
+
+  // Declare a logger class for us to isolate these messages during aggregation.
+  // Force the log level to DEBUG for initial testing.
+  Logger log = Logger.getLogger("rule.YuveLog");
+  // log.setLevel(Level.DEBUG); // TODO: Turn this off or remove this line when
+  // checking in.
+
+  // Initialize the error message to nothing.
+  String errorMessage = "";
+
+  // We need some values defined to know which account we want to aggregate.
+  String applicationName = "GuestView"; //quser91936 //QUSER91905
+  String accountName = "525427";//"f9e9da55-2ad2-45fd-91f3-2a8ae636ef95"; // "CN=919121,OU=Limbo,OU=Sailpoint7.3-Test,DC=nonprod,DC=org";//"CN=919121,DC=nonprod,DC=org"; //"CN=919121,OU=Limbo,OU=Sailpoint7.3-Test,DC=nonprod,DC=org";//"CN=919121,OU=Users,OU=Accounts,dc=nonprod,dc=org";//"CN=919121,DC=nonprod,DC=org";
+
+  // We have already validated all of the arguments. No just load the objects.
+  Application appObject = context.getObjectByName(Application.class, applicationName);
+  String appConnName = appObject.getConnector();
+  log.debug("Application " + applicationName + " uses connector " + appConnName);
+
+  Connector appConnector = sailpoint.connector.ConnectorFactory.getConnector(appObject, null);
+  if (null == appConnector) {
+    errorMessage = "Failed to construct an instance of connector [" + appConnName + "]";
+    return errorMessage;
+  }
+
+  log.debug("Connector instantiated, calling getObject() to read account details...");
+
+  ResourceObject rObj = null;
+
+  try {
+    rObj = (ResourceObject) appConnector.getObject("account", accountName, null);
+  } catch (ConnectorException e) {
+    // TODO Auto-generated catch block
+    e.printStackTrace();
+  }
+
+  if (null == rObj) {
+    errorMessage = "ERROR: Could not get ResourceObject for account: " + accountName;
+    log.error(errorMessage);
+    return errorMessage;
+  }
+//return rObj;
+  log.debug("Got raw resourceObject: " + rObj.toXml());
+
+  // Now we have a raw ResourceObject. The Application in IdentityIQ may have a
+  // Customization rule defined to transform the ResourceObject. We need to
+  // honor that configuration, so if the Applicaiton has a Rule then we run it.
+  Rule customizationRule = appObject.getCustomizationRule();
+
+  if (null != customizationRule) {
+
+    log.debug("Customization rule found for applicaiton " + applicationName);
+
+    try {
+
+      // Pass the mandatory arguments to the Customization rule for the app.
+      HashMap ruleArgs = new HashMap();
+      ruleArgs.put("context", context);
+      ruleArgs.put("log", log);
+      ruleArgs.put("object", rObj);
+      ruleArgs.put("application", appObject);
+      ruleArgs.put("connector", appConnector);
+      ruleArgs.put("state", new HashMap());
+
+      // Call the customization rule just like a normal aggregation would.
+      ResourceObject newRObj = (ResourceObject) context.runRule(customizationRule, ruleArgs, null);
+
+      // Make sure we got a valid resourceObject back from the rule.
+      if (null != newRObj) {
+        rObj = newRObj;
+        log.debug("Got post-customization resourceObject: " + rObj.toXml());
+      }
+
+    } catch (Exception ex) {
+
+      // Swallow any customization rule errors, the show must go on!
+      log.error("Error while running Customization rule for " + applicationName);
+
+    }
+
+  }
+
+  // Next we perform a miniature "Aggregation" using IIQ's built in Aggregator.
+  // Create an arguments map for the aggregation task.
+  // To change this (if you need to), the map contains aggregation options and is
+  // the same as the
+  // arguments to the acocunt aggregation tasks. Some suggestied defaults are:
+  Attributes argMap = new Attributes();
+  argMap.put("promoteAttributes", "true");
+  argMap.put("correlateEntitlements", "true");
+  argMap.put("noOptimizeReaggregation", "true"); // Note: Set to false to disable re-correlation.
+  argMap.put("checkDeleted", "true");
+
+  // Consturct an aggregator instance.
+  Aggregator agg = new Aggregator(context, argMap);
+  if (null == agg) {
+    errorMessage = "Null Aggregator returned from constructor.  Unable to Aggregate!";
+    log.error(errorMessage);
+    return errorMessage;
+  }
+
+  // Invoke the aggregation task by calling the aggregate() method.
+  // Note: the aggregate() call may take serveral seconds to complete.
+  log.debug("Calling aggregate() method... ");
+  TaskResult taskResult = agg.aggregate(appObject, rObj);
+  log.debug("aggregation complete.");
+
+  if (null == taskResult) {
+    errorMessage = "ERROR: Null taskResult returned from aggregate() call.";
+    log.error(errorMessage);
+    return errorMessage;
+  }
+
+  log.debug("TaskResult details: \n" + taskResult.toXml());
+
+  return ("Success");
