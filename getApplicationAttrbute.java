@@ -15,7 +15,7 @@ public static void main(String[] args) {
 	SailPointContext context = null;
 	  List finull = new ArrayList();
 	  Filter filterApp = Filter.eq("application.name", "Visual Limits Casino");
-	  Filter filterRole = Filter.eq("attribute", "Roles-Bellagio");		// make sure you make the atrribute values as [ Managed, Entitlement, Multi-Valued ]
+	  Filter filterRole = Filter.eq("attribute", "Roles-Bellagio");		// make sure you make the atrribute values as [ Managed ]
 	  Filter andFilter = Filter.and(filterApp, filterRole);
 
 	  QueryOptions qo = new QueryOptions();
