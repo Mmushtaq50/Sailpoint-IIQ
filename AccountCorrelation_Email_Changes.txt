@@ -1,0 +1,21 @@
+  import java.util.HashMap;
+  import java.util.Map;
+  import sailpoint.api.SailPointContext;
+  import sailpoint.object.ResourceObject;
+  import sailpoint.tools.Util;
+
+  //SailPointContext context = null;
+  //ResourceObject account = null;
+
+  Map map = new HashMap();
+
+  String email = account.getAttribute("Email");
+  if (Util.isNotNullOrEmpty("email") @and email.contains("@")) {
+    int index = email.indexOf("@");
+    email = email.substring(0, index);
+
+    map.put("identityAttributeName", "email");
+    map.put("identityAttributeValue", "@MGM.com");
+
+     return map;
+  }
